@@ -63,6 +63,14 @@ function compareByLastAccessDesc(a, b) {
   }
 }
 
+/**
+ * Function called when the setting for auto-sorting changing.
+ * Adds/removes listener for automatic tab sorting.
+ * 
+ * @see settingsSortAutoHandler
+ * 
+ * @param {boolean} newValue The new value of the auto-sorting setting
+ */
 function onSettingsSortAuto(newValue) {
   if (newValue) {
     browser.tabs.onUpdated.addListener(settingsSortAutoHandler);
@@ -75,10 +83,17 @@ function onSettingsSortAuto(newValue) {
   return Promise.resolve();
 }
 
+/**
+ * Function called when the setting for sorting pinned tabs changing.
+ * No-op.
+ * 
+ * @param {boolean} newValue The new value of the pinned tab sorting setting
+ */
 function onSettingsSortPinned(newValue) {
   return Promise.resolve();
 }
 
+/** Mapping of {@link menuDefs} IDs to URL comparator functions */
 let menuIdToComparator = {
   "sort-by-url-asc": compareByUrlAsc,
   "sort-by-url-desc": compareByUrlDesc,
@@ -90,16 +105,18 @@ let menuIdToComparator = {
   "sort-by-title-desc": compareByTitleDesc,
 };
 
+/** Mapping of {@link settingsDefs} IDs to on-change functions */
 let settingsMenuIdToHandler = {
   "settings-sort-auto": onSettingsSortAuto,
   "settings-sort-pinned": onSettingsSortPinned,
 };
 
-function sortTabsComparatorName(compName, settings) {
-  return sortTabs(menuIdToComparator[compName], settings);
-}
-
-function settingsSortAutoHandler(tabId, changeInfo, tabInfo) {
+/**
+ * Listener for tabs.onCreated and tabs.onUpdated that automatically sorts tabs.
+ * 
+ * @see onSettingsSortAuto
+ */
+function settingsSortAutoHandler() {
   browser.storage.local
     .get({
       "last-comparator": undefined,
@@ -112,10 +129,19 @@ function settingsSortAutoHandler(tabId, changeInfo, tabInfo) {
           menuIdToComparator[settings["last-comparator"]],
           settings
         );
-      }
+      } else {
+		  console.warning("Tried to automatically sort tabs but couldn't find the last-comparator. Doing nothing instead.");
+	  }
     }, onError);
 }
 
+/**
+ * Sorts tabs given a comparator function and the current tab-sorting settings
+ * 
+ * @param {function} comparator The comparator function to compare URLs
+ * @param settings The current tab-sorting settings
+ * @returns {Promise} A Promise which will be fulfilled once tabs are sorted
+ */
 function sortTabs(comparator, settings) {
   return browser.tabs
     .query({
@@ -135,6 +161,12 @@ function sortTabs(comparator, settings) {
     });
 }
 
+/**
+ * Internal function for sorting a set of tabs
+ * 
+ * @param {Tab[]} tabs The tabs which will be sorted
+ * @param {function} comparator The comparator to use on URLs
+ */
 function sortTabsInternal(tabs, comparator) {
   if (tabs.length == 0) return;
 
@@ -165,14 +197,43 @@ function sortTabsInternal(tabs, comparator) {
   }
 }
 
+/** 
+ * "public" API - functions which are called from the popup in popup/sortabs.js
+ */
+
+
+/**
+ * Called when a setting has changed.
+ * Updates local storage, and handles any necessary background state changes
+ * e.g. adding/removing listeners.
+ * 
+ * @param {string} settingId The ID of the changed setting
+ * @param {boolean} newValue The new value of the changed setting
+ */
 function settingChanged(settingId, newValue) {
+  // First, call the handler
   return settingsMenuIdToHandler[settingId](newValue).then((e) => {
+	// Once that's finished, store the new value of the setting
     return browser.storage.local.set({
       [settingId]: newValue,
     });
   }, onError);
 }
 
+/**
+ * Sort the tabs using the given comparator and current settings state.
+ * @see menuIdToComparator
+ * @see sortTabs
+ * 
+ * @param {string} compName The ID of the comparator to use
+ * @param settings Current tab-sorting settings
+ * @returns {Promise} A Promise which will be fulfilled once tabs are sorted.
+ */
+function sortTabsComparatorName(compName, settings) {
+  return sortTabs(menuIdToComparator[compName], settings);
+}
+
+/** Simple error handling function */
 function onError(error) {
   console.trace(error);
 }
