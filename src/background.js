@@ -77,8 +77,8 @@ function compareByLastAccessDesc(a, b) {
 	}
 }
 
-function onSettingsSortAuto(evt) {
-  if (evt.target.checked) {
+function onSettingsSortAuto(newValue) {
+  if (newValue) {
     browser.tabs.onUpdated.addListener(settingsSortAutoHandler);
     browser.tabs.onCreated.addListener(settingsSortAutoHandler);
   } else {
@@ -89,7 +89,7 @@ function onSettingsSortAuto(evt) {
   return Promise.resolve();
 }
 
-function onSettingsSortPinned(evt) {
+function onSettingsSortPinned(newValue) {
   return Promise.resolve();
 }
 
@@ -173,12 +173,12 @@ function sortTabsInternal(tabs, comparator) {
 	}
 }
 
-function settingChanged(evt) {
-  return settingsMenuIdToHandler[evt.target.id](evt)
+function settingChanged(settingId, newValue) {
+  return settingsMenuIdToHandler[settingId](newValue)
     .then(
       (e) => {
         return browser.storage.local.set({
-          [evt.target.id]: evt.target.checked
+          [settingId]: newValue
         });
       }, onError);
 }

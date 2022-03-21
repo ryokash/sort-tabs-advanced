@@ -103,7 +103,7 @@ function clickHandler(evt, settings) {
 function settingsClickHandler(evt, settings) {
   let backgroundWindow = browser.runtime.getBackgroundPage();
   return backgroundWindow.then(
-    (w) => w.settingChanged(evt));
+    (w) => w.settingChanged(evt.target.id, evt.target.checked));
 }
 
 function createButton(buttonDef, settings) {
