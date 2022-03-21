@@ -9,8 +9,8 @@
  * @typedef {Object} SortMetadata
  * @property {string} id - Unique ID, used in background.js to match to a comparator
  * @property {string} title - User-facing title
- * @property {string[]} contexts - Unused, seems to correspond to usage from @link{https://developer.mozilla.org/en-US/docs/Mozilla/Add-ons/WebExtensions/API/menus/create menus.create()}
- * @property {Object} icons - Unused, seems to correspond to usage from @link{https://developer.mozilla.org/en-US/docs/Mozilla/Add-ons/WebExtensions/API/menus/create menus.create()}
+ * @property {string[]} contexts - Unused, seems to correspond to usage from {@link https://developer.mozilla.org/en-US/docs/Mozilla/Add-ons/WebExtensions/API/menus/create menus.create()}
+ * @property {Object} icons - Unused, seems to correspond to usage from {@link https://developer.mozilla.org/en-US/docs/Mozilla/Add-ons/WebExtensions/API/menus/create menus.create()}
  */
 
 /**
@@ -141,7 +141,7 @@ function initializeSettings() {
  * @param evt The click event for the setting button
  * @param settings The tab-sorting settings at time of button creation
  */
-function clickHandler(evt, settings) {
+function sortClickHandler(evt, settings) {
   let backgroundWindow = browser.runtime.getBackgroundPage();
   backgroundWindow
     // Perform sorting
@@ -162,13 +162,13 @@ function clickHandler(evt, settings) {
  *
  * @param {SortMetadata} buttonDef Metadata for the given sort type
  * @param settings The tab-sorting settings at time of creation
- * @returns A clickable element that triggers {@link clickHandler}
+ * @returns A clickable element that triggers {@link sortClickHandler}
  */
-function createButton(buttonDef, settings) {
+function createSortButton(buttonDef, settings) {
   let newEl = document.createElement("div");
   newEl.id = buttonDef.id;
   newEl.innerText = buttonDef.title;
-  newEl.addEventListener("click", (evt) => clickHandler(evt, settings));
+  newEl.addEventListener("click", (evt) => sortClickHandler(evt, settings));
   return newEl;
 }
 
@@ -225,7 +225,7 @@ function createPopup(settings) {
   );
   settingsButtons.forEach((button) => settingsGroup.appendChild(button));
 
-  const buttons = menuDefs.map((menuDef) => createButton(menuDef, settings));
+  const buttons = menuDefs.map((menuDef) => createSortButton(menuDef, settings));
   const buttonGroup = document.createElement("div");
   buttons.forEach((button) => buttonGroup.appendChild(button));
 

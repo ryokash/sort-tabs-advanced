@@ -63,6 +63,22 @@ function compareByLastAccessDesc(a, b) {
   }
 }
 
+/** Mapping of {@link menuDefs} IDs to URL comparator functions */
+let menuIdToComparator = {
+	"sort-by-url-asc": compareByUrlAsc,
+	"sort-by-url-desc": compareByUrlDesc,
+	"sort-by-domain-asc": compareByDomainAsc,
+	"sort-by-domain-desc": compareByDomainDesc,
+	"sort-by-last-access-asc": compareByLastAccessAsc,
+	"sort-by-last-access-desc": compareByLastAccessDesc,
+	"sort-by-title-asc": compareByTitleAsc,
+	"sort-by-title-desc": compareByTitleDesc,
+  };
+
+/**
+ * Settings Functions
+ */
+
 /**
  * Function called when the setting for auto-sorting changing.
  * Adds/removes listener for automatic tab sorting.
@@ -93,18 +109,6 @@ function onSettingsSortPinned(newValue) {
   return Promise.resolve();
 }
 
-/** Mapping of {@link menuDefs} IDs to URL comparator functions */
-let menuIdToComparator = {
-  "sort-by-url-asc": compareByUrlAsc,
-  "sort-by-url-desc": compareByUrlDesc,
-  "sort-by-domain-asc": compareByDomainAsc,
-  "sort-by-domain-desc": compareByDomainDesc,
-  "sort-by-last-access-asc": compareByLastAccessAsc,
-  "sort-by-last-access-desc": compareByLastAccessDesc,
-  "sort-by-title-asc": compareByTitleAsc,
-  "sort-by-title-desc": compareByTitleDesc,
-};
-
 /** Mapping of {@link settingsDefs} IDs to on-change functions */
 let settingsMenuIdToHandler = {
   "settings-sort-auto": onSettingsSortAuto,
@@ -134,6 +138,10 @@ function settingsSortAutoHandler() {
 	  }
     }, onError);
 }
+
+/**
+ * Tab sorting functions
+ */
 
 /**
  * Sorts tabs given a comparator function and the current tab-sorting settings
