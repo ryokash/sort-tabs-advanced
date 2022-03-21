@@ -3,7 +3,19 @@
  */
 
 /**
- * menu definitions
+ * Sort-type metadata
+ * @see {menuDefs}
+ *
+ * @typedef {Object} SortMetadata
+ * @property {string} id - Unique ID, used in background.js to match to a comparator
+ * @property {string} title - User-facing title
+ * @property {string[]} contexts - Unused, seems to correspond to usage from @link{https://developer.mozilla.org/en-US/docs/Mozilla/Add-ons/WebExtensions/API/menus/create menus.create()}
+ * @property {Object} icons - Unused, seems to correspond to usage from @link{https://developer.mozilla.org/en-US/docs/Mozilla/Add-ons/WebExtensions/API/menus/create menus.create()}
+ */
+
+/**
+ * Metadata for each available sort type
+ * @type {SortMetadata[]}
  */
 let menuDefs = [
   {
@@ -72,6 +84,20 @@ let menuDefs = [
   },
 ];
 
+/**
+ * Settings metadata
+ * @see {settingsDefs}
+ *
+ * @typedef {Object} SettingMetadata
+ * @property {string} id - Unique ID, used in background.js
+ * @property {string} title - User-facing title
+ * @property {string[]} contexts - Unused, seems to correspond to usage from @link{https://developer.mozilla.org/en-US/docs/Mozilla/Add-ons/WebExtensions/API/menus/create menus.create()}
+ */
+
+/**
+ * Metadata for each available setting
+ * @type {SettingMetadata[]}
+ */
 let settingsDefs = [
   {
     id: "settings-sort-auto",
@@ -85,10 +111,19 @@ let settingsDefs = [
   },
 ];
 
+/** Simple error handling function */
 function onError(error) {
   console.trace(error);
 }
 
+/**
+ * Initialization functions
+ */
+
+/**
+ * Returns the settings stored in browser persistent storage,
+ * initializing them if they aren't already there.
+ */
 function initializeSettings() {
   let defaultDict = settingsDefs.reduce(
     (acc, cur, idx, src) => Object.assign(acc, { [cur.id]: false }),
@@ -97,12 +132,23 @@ function initializeSettings() {
   return browser.storage.local.get(defaultDict);
 }
 
+/**
+ * Click handler for buttons corresponding to sort types
+ * e.g. "sort by url (asc)"
+ * Sorts the tabs by the specified comparator,
+ * then saves that comparator as the 'last-comparator' setting.
+ *
+ * @param evt The click event for the setting button
+ * @param settings The tab-sorting settings at time of button creation
+ */
 function clickHandler(evt, settings) {
   let backgroundWindow = browser.runtime.getBackgroundPage();
   backgroundWindow
+    // Perform sorting
     .then((w) => w.sortTabsComparatorName(evt.target.id, settings))
+    // Store this as the last used comparator
     .then((tab) => {
-      console.log("Click handler: " + evt.target.id);
+      console.log("Sort click handler: " + evt.target.id);
       return browser.storage.local
         .set({
           "last-comparator": evt.target.id,
@@ -111,6 +157,29 @@ function clickHandler(evt, settings) {
     }, onError);
 }
 
+/**
+ * Creates a button for a given sort type
+ *
+ * @param {SortMetadata} buttonDef Metadata for the given sort type
+ * @param settings The tab-sorting settings at time of creation
+ * @returns A clickable element that triggers {@link clickHandler}
+ */
+function createButton(buttonDef, settings) {
+  let newEl = document.createElement("div");
+  newEl.id = buttonDef.id;
+  newEl.innerText = buttonDef.title;
+  newEl.addEventListener("click", (evt) => clickHandler(evt, settings));
+  return newEl;
+}
+
+/**
+ * Click handler for buttons corresponding to settings
+ * e.g. "sort automatically"
+ * Finds the background page, then tells that page a setting has changed.
+ *
+ * @param evt The click event for the setting button
+ * @param settings (Unused) The tab-sorting settings at time of creation
+ */
 function settingsClickHandler(evt, settings) {
   let backgroundWindow = browser.runtime.getBackgroundPage();
   return backgroundWindow.then((w) =>
@@ -118,15 +187,13 @@ function settingsClickHandler(evt, settings) {
   );
 }
 
-function createButton(buttonDef, settings) {
-  let newEl = document.createElement("div");
-  newEl.id = buttonDef.id;
-  newEl.innerText = buttonDef.title;
-  // newEl.src = "../" + buttonDef.icons[16];
-  newEl.addEventListener("click", (evt) => clickHandler(evt, settings));
-  return newEl;
-}
-
+/**
+ * Creates a checkbox for a given setting
+ *
+ * @param {SettingMetadata} buttonDef Metadata for the given setting
+ * @param settings The tab-sorting settings at time of creation
+ * @returns A checkbox that reflects the setting's state, and toggles it with {@link settingsClickHandler} on-click.
+ */
 function createSettingsToggle(buttonDef, settings) {
   let newEl = document.createElement("div");
   newEl.id = buttonDef.id;
@@ -145,6 +212,11 @@ function createSettingsToggle(buttonDef, settings) {
   return newEl;
 }
 
+/**
+ * Creates the popup menu from {@link menuDefs}, {@link settingsDefs}
+ *
+ * @param settings The tab-sorting settings at time of creation
+ */
 function createPopup(settings) {
   console.log(settings);
   const settingsGroup = document.createElement("div");
@@ -164,9 +236,7 @@ function createPopup(settings) {
   settingsCont.appendChild(settingsGroup);
 }
 
-/**
- * init
- */
+// When the popup opens, initialize the settings and create the popup menu
 document.addEventListener("DOMContentLoaded", (evt) => {
   initializeSettings().then((settings) => {
     createPopup(settings);
