@@ -125,10 +125,11 @@ function onError(error) {
  * initializing them if they aren't already there.
  */
 function initializeSettings() {
-  let defaultDict = settingsDefs.reduce(
-    (acc, cur, idx, src) => Object.assign(acc, { [cur.id]: false }),
-    {}
-  );
+  const defaultDict = {
+    "last-comparator": undefined,
+    "settings-sort-auto": false,
+    "settings-sort-pinned": false,
+  };
   return browser.storage.local.get(defaultDict);
 }
 
@@ -225,7 +226,9 @@ function createPopup(settings) {
   );
   settingsButtons.forEach((button) => settingsGroup.appendChild(button));
 
-  const buttons = menuDefs.map((menuDef) => createSortButton(menuDef, settings));
+  const buttons = menuDefs.map((menuDef) =>
+    createSortButton(menuDef, settings)
+  );
   const buttonGroup = document.createElement("div");
   buttons.forEach((button) => buttonGroup.appendChild(button));
 

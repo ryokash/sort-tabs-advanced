@@ -65,26 +65,26 @@ function compareByLastAccessDesc(a, b) {
 
 /** Mapping of {@link menuDefs} IDs to URL comparator functions */
 let menuIdToComparator = {
-	"sort-by-url-asc": compareByUrlAsc,
-	"sort-by-url-desc": compareByUrlDesc,
-	"sort-by-domain-asc": compareByDomainAsc,
-	"sort-by-domain-desc": compareByDomainDesc,
-	"sort-by-last-access-asc": compareByLastAccessAsc,
-	"sort-by-last-access-desc": compareByLastAccessDesc,
-	"sort-by-title-asc": compareByTitleAsc,
-	"sort-by-title-desc": compareByTitleDesc,
-  };
+  "sort-by-url-asc": compareByUrlAsc,
+  "sort-by-url-desc": compareByUrlDesc,
+  "sort-by-domain-asc": compareByDomainAsc,
+  "sort-by-domain-desc": compareByDomainDesc,
+  "sort-by-last-access-asc": compareByLastAccessAsc,
+  "sort-by-last-access-desc": compareByLastAccessDesc,
+  "sort-by-title-asc": compareByTitleAsc,
+  "sort-by-title-desc": compareByTitleDesc,
+};
 
 /**
  * Settings Functions
  */
 
 /**
- * Function called when the setting for auto-sorting changing.
  * Adds/removes listener for automatic tab sorting.
- * 
+ * Called when the setting for auto-sorting changes, or when the extension is first loaded.
+ *
  * @see settingsSortAutoHandler
- * 
+ *
  * @param {boolean} newValue The new value of the auto-sorting setting
  */
 function onSettingsSortAuto(newValue) {
@@ -100,9 +100,9 @@ function onSettingsSortAuto(newValue) {
 }
 
 /**
- * Function called when the setting for sorting pinned tabs changing.
  * No-op.
- * 
+ * Called when the setting for sorting pinned tabs changes.
+ *
  * @param {boolean} newValue The new value of the pinned tab sorting setting
  */
 function onSettingsSortPinned(newValue) {
@@ -116,27 +116,38 @@ let settingsMenuIdToHandler = {
 };
 
 /**
+ * Returns the settings stored in browser persistent storage,
+ * initializing them if they aren't already there.
+ *
+ * @returns {Promise} A Promise containing the current settings
+ */
+function initializeSettings() {
+  const defaultDict = {
+    "last-comparator": undefined,
+    "settings-sort-auto": false,
+    "settings-sort-pinned": false,
+  };
+  return browser.storage.local.get(defaultDict);
+}
+
+/**
  * Listener for tabs.onCreated and tabs.onUpdated that automatically sorts tabs.
- * 
+ *
  * @see onSettingsSortAuto
  */
 function settingsSortAutoHandler() {
-  browser.storage.local
-    .get({
-      "last-comparator": undefined,
-      "settings-sort-auto": false,
-      "settings-sort-pinned": false,
-    })
-    .then((settings) => {
-      if (menuIdToComparator[settings["last-comparator"]] !== undefined) {
-        return sortTabs(
-          menuIdToComparator[settings["last-comparator"]],
-          settings
-        );
-      } else {
-		  console.warning("Tried to automatically sort tabs but couldn't find the last-comparator. Doing nothing instead.");
-	  }
-    }, onError);
+  initializeSettings().then((settings) => {
+    if (menuIdToComparator[settings["last-comparator"]] !== undefined) {
+      return sortTabs(
+        menuIdToComparator[settings["last-comparator"]],
+        settings
+      );
+    } else {
+      console.warning(
+        "Tried to automatically sort tabs but couldn't find the last-comparator. Doing nothing instead."
+      );
+    }
+  }, onError);
 }
 
 /**
@@ -145,7 +156,7 @@ function settingsSortAutoHandler() {
 
 /**
  * Sorts tabs given a comparator function and the current tab-sorting settings
- * 
+ *
  * @param {function} comparator The comparator function to compare URLs
  * @param settings The current tab-sorting settings
  * @returns {Promise} A Promise which will be fulfilled once tabs are sorted
@@ -171,7 +182,7 @@ function sortTabs(comparator, settings) {
 
 /**
  * Internal function for sorting a set of tabs
- * 
+ *
  * @param {Tab[]} tabs The tabs which will be sorted
  * @param {function} comparator The comparator to use on URLs
  */
@@ -205,23 +216,22 @@ function sortTabsInternal(tabs, comparator) {
   }
 }
 
-/** 
+/**
  * "public" API - functions which are called from the popup in popup/sortabs.js
  */
-
 
 /**
  * Called when a setting has changed.
  * Updates local storage, and handles any necessary background state changes
  * e.g. adding/removing listeners.
- * 
+ *
  * @param {string} settingId The ID of the changed setting
  * @param {boolean} newValue The new value of the changed setting
  */
 function settingChanged(settingId, newValue) {
   // First, call the handler
   return settingsMenuIdToHandler[settingId](newValue).then((e) => {
-	// Once that's finished, store the new value of the setting
+    // Once that's finished, store the new value of the setting
     return browser.storage.local.set({
       [settingId]: newValue,
     });
@@ -232,7 +242,7 @@ function settingChanged(settingId, newValue) {
  * Sort the tabs using the given comparator and current settings state.
  * @see menuIdToComparator
  * @see sortTabs
- * 
+ *
  * @param {string} compName The ID of the comparator to use
  * @param settings Current tab-sorting settings
  * @returns {Promise} A Promise which will be fulfilled once tabs are sorted.
@@ -245,3 +255,10 @@ function sortTabsComparatorName(compName, settings) {
 function onError(error) {
   console.trace(error);
 }
+
+// When the extension is loaded, check if the auto-sort setting is checked and immediately add handlers
+document.addEventListener("DOMContentLoaded", (evt) => {
+  initializeSettings().then((settings) => {
+    onSettingsSortAuto(settings["settings-sort-auto"]);
+  }, onError);
+});
