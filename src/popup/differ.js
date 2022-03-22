@@ -39,12 +39,14 @@ IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISI
 OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 
-const differ = { // eslint-disable-line no-unused-vars
+const differ = {
+  // eslint-disable-line no-unused-vars
   diff(oldValues, newValues) {
     oldValues = oldValues.slice();
     newValues = newValues.slice();
 
-    const newLen = newValues.length, oldLen = oldValues.length;
+    const newLen = newValues.length,
+      oldLen = oldValues.length;
     let editLength = 1;
     const maxEditLength = newLen + oldLen;
     const bestPath = [{ newPos: -1, components: [] }];
@@ -53,12 +55,16 @@ const differ = { // eslint-disable-line no-unused-vars
     const oldPos = this.extractCommon(bestPath[0], newValues, oldValues, 0);
     if (bestPath[0].newPos + 1 >= newLen && oldPos + 1 >= oldLen) {
       // Identity per the equality
-      return [{value: newValues, count: newValues.length}];
+      return [{ value: newValues, count: newValues.length }];
     }
 
     // Main worker method. checks all permutations of a given edit length for acceptance.
     function execEditLength() {
-      for (let diagonalPath = -1 * editLength; diagonalPath <= editLength; diagonalPath += 2) {
+      for (
+        let diagonalPath = -1 * editLength;
+        diagonalPath <= editLength;
+        diagonalPath += 2
+      ) {
         let basePath;
         const addPath = bestPath[diagonalPath - 1];
         const removePath = bestPath[diagonalPath + 1];
@@ -88,11 +94,21 @@ const differ = { // eslint-disable-line no-unused-vars
           this.pushComponent(basePath.components, true, undefined);
         }
 
-        oldPos = this.extractCommon(basePath, newValues, oldValues, diagonalPath);
+        oldPos = this.extractCommon(
+          basePath,
+          newValues,
+          oldValues,
+          diagonalPath
+        );
 
         // If we have hit the end of both strings, then we are done
         if (basePath.newPos + 1 >= newLen && oldPos + 1 >= oldLen) {
-          return this._buildValues(basePath.components, newValues, oldValues, this.useLongestToken);
+          return this._buildValues(
+            basePath.components,
+            newValues,
+            oldValues,
+            this.useLongestToken
+          );
         } else {
           // Otherwise track this path as a potential candidate and continue.
           bestPath[diagonalPath] = basePath;
@@ -115,9 +131,13 @@ const differ = { // eslint-disable-line no-unused-vars
     if (last && last.added === added && last.removed === removed) {
       // We need to clone here as the component clone operation is just
       // as shallow array clone
-      components[components.length - 1] = {count: last.count + 1, added: added, removed: removed };
+      components[components.length - 1] = {
+        count: last.count + 1,
+        added: added,
+        removed: removed,
+      };
     } else {
-      components.push({count: 1, added: added, removed: removed });
+      components.push({ count: 1, added: added, removed: removed });
     }
   },
   extractCommon(basePath, newValues, oldValues, diagonalPath) {
@@ -127,14 +147,18 @@ const differ = { // eslint-disable-line no-unused-vars
     let oldPos = newPos - diagonalPath;
 
     let commonCount = 0;
-    while (newPos + 1 < newLen && oldPos + 1 < oldLen && newValues[newPos + 1] === oldValues[oldPos + 1]) {
+    while (
+      newPos + 1 < newLen &&
+      oldPos + 1 < oldLen &&
+      newValues[newPos + 1] === oldValues[oldPos + 1]
+    ) {
       newPos++;
       oldPos++;
       commonCount++;
     }
 
     if (commonCount) {
-      basePath.components.push({count: commonCount});
+      basePath.components.push({ count: commonCount });
     }
 
     basePath.newPos = newPos;
@@ -152,7 +176,7 @@ const differ = { // eslint-disable-line no-unused-vars
       if (!component.removed) {
         if (!component.added && useLongestToken) {
           let value = newValues.slice(newPos, newPos + component.count);
-          value = value.map(function(value, i) {
+          value = value.map(function (value, i) {
             const oldValue = oldValues[oldPos + i];
             return oldValue.length > value.length ? oldValue : value;
           });
@@ -187,5 +211,5 @@ const differ = { // eslint-disable-line no-unused-vars
 
   _clonePath(path) {
     return { newPos: path.newPos, components: path.components.slice(0) };
-  }
+  },
 };

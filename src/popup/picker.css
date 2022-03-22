@@ -1,20 +1,21 @@
-#options, #settings {
-	display : flex;
-	flex-direction : column;
-	padding-top : 5px;
+#options,
+#settings {
+  display: flex;
+  flex-direction: column;
+  padding-top: 5px;
 }
 
 #options > div > *,
 #settings > div > * {
-	padding : 5px;
-	cursor : pointer;
+  padding: 5px;
+  cursor: pointer;
 }
 
 #options > div > *:hover,
 #settings > div > *:hover {
-	background-color : #dedede;
+  background-color: #dedede;
 }
 
 hr {
-    width: 100%;
+  width: 100%;
 }
